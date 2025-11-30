@@ -37,19 +37,20 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                bat "docker build -t ${IMAGE_NAME}:latest ."
             }
         }
 
-        stage('Login & Push to Docker Hub') {
+        stage('Push to Docker Hub') {
             steps {
                 bat """
                     docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PSW}
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                    docker push ${IMAGE_NAME}:latest
                     docker logout
                 """
             }
         }
+
 
         stage('Deploy to Azure Container Instances') {
             steps {
