@@ -68,28 +68,30 @@ pipeline {
 
                     az account set --subscription %AZ_SUBSCRIPTION_ID%
 
-                    REM Delete existing container if present
+                    REM Try to delete existing container (ignore errors)
                     az container delete ^
-                        --resource-group %AZURE_RG% ^
-                        --name %AZURE_CONTAINER_NAME% ^
+                        --resource-group my-aci-rg ^
+                        --name flask-aci-app ^
                         --yes ^
                         --only-show-errors
 
-                    REM Create new container
+                    REM Create new ACI using the latest image from Docker Hub
                     az container create ^
-                        --resource-group %AZURE_RG% ^
-                        --name %AZURE_CONTAINER_NAME% ^
-                        --image ${IMAGE_NAME}:${BUILD_NUMBER} ^
+                        --resource-group my-aci-rg ^
+                        --name flask-aci-app ^
+                        --image srinayana20/aci_docker_cicd:latest ^
                         --cpu 1 ^
                         --memory 1 ^
                         --ports 5000 ^
-                        --dns-name-label %AZURE_CONTAINER_NAME%-dns ^
-                        --location %AZURE_LOCATION%
+                        --dns-name-label flask-aci-app-%BUILD_NUMBER% ^
+                        --location eastus ^
+                        --os-type Linux
 
                     az logout
                     """
                 }
             }
         }
+
     }
 }
