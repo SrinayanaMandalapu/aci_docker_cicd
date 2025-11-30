@@ -3,21 +3,24 @@ pipeline {
 
     environment {
         PYTHON = "C:\\Users\\manda\\AppData\\Local\\Programs\\Python\\Python312"
-        PATH = "${PYTHON};${PYTHON}\\Scripts;${env.PATH}"
 
-        // Docker Hub
+        // Folder where az.cmd lives (change according to `where az` result)
+        AZ_CLI = "C:\\Program Files (x86)\\Microsoft SDKs\\Azure\\CLI2\\wbin"
+
+        // Add Azure CLI + Python to PATH
+        PATH = "${AZ_CLI};${PYTHON};${PYTHON}\\Scripts;${env.PATH}"
+
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         IMAGE_NAME  = 'srinayana20/aci_docker_cicd'
 
-        // Git
         GIT_REPO = 'https://github.com/SrinayanaMandalapu/aci_docker_cicd'
         BRANCH   = 'main'
 
-        // Azure (non-secret)
-        AZURE_RG          = 'my-aci-rg'
-        AZURE_LOCATION    = 'eastus'
+        AZURE_RG             = 'my-aci-rg'
+        AZURE_LOCATION       = 'eastus'
         AZURE_CONTAINER_NAME = 'flask-aci-app'
     }
+
 
     stages {
         stage('Checkout Source') {
