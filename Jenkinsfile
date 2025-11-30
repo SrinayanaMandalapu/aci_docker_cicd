@@ -57,11 +57,10 @@ pipeline {
                     string(credentialsId: 'azure-client-secret',   variable: 'AZ_CLIENT_SECRET'),
                     string(credentialsId: 'azure-tenant-id',       variable: 'AZ_TENANT_ID'),
                     string(credentialsId: 'azure-subscription-id', variable: 'AZ_SUBSCRIPTION_ID'),
-                    // 🔴 ADD THIS: reuse Docker Hub creds for ACI pull
                     usernamePassword(credentialsId: 'dockerhub',   usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')
                 ]) {
 
-                    // 1) Login
+                    // 1) Login to Azure
                     bat """
                     az login --service-principal --username %AZ_CLIENT_ID% --password %AZ_CLIENT_SECRET% --tenant %AZ_TENANT_ID%
                     """
@@ -71,31 +70,32 @@ pipeline {
                     az account set --subscription %AZ_SUBSCRIPTION_ID%
                     """
 
-                    // 3) Try delete old container (if it exists). Ignore error if not found.
+                    // 3) Safely set Docker Hub user/pass in local env variables
                     bat """
+                    set "ACI_DOCKER_USER=%DH_USER%"
+                    set "ACI_DOCKER_PASS=%DH_PASS%"
+
                     az container delete --resource-group ${AZURE_RG} --name ${AZURE_CONTAINER_NAME} --yes --only-show-errors || echo No existing container to delete
-                    """
 
-                    // 4) Create new container from latest image (🔴 WITH REGISTRY CREDS)
-                    bat """
                     az container create ^
-                      --resource-group ${AZURE_RG} ^
-                      --name ${AZURE_CONTAINER_NAME} ^
-                      --image ${IMAGE_NAME}:latest ^
-                      --cpu 1 ^
-                      --memory 1 ^
-                      --ports 5000 ^
-                      --dns-name-label ${AZURE_CONTAINER_NAME}-%BUILD_NUMBER% ^
-                      --location ${AZURE_LOCATION} ^
-                      --os-type Linux ^
-                      --registry-username %DH_USER% ^
-                      --registry-password %DH_PASS%
+                    --resource-group ${AZURE_RG} ^
+                    --name ${AZURE_CONTAINER_NAME} ^
+                    --image ${IMAGE_NAME}:latest ^
+                    --cpu 1 ^
+                    --memory 1 ^
+                    --ports 5000 ^
+                    --dns-name-label ${AZURE_CONTAINER_NAME}-%BUILD_NUMBER% ^
+                    --location ${AZURE_LOCATION} ^
+                    --os-type Linux ^
+                    --registry-username %ACI_DOCKER_USER% ^
+                    --registry-password "%ACI_DOCKER_PASS%"
                     """
 
-                    // 5) Logout (optional, but clean)
+                    // 4) Logout
                     bat "az logout"
                 }
             }
         }
+
     }
 }
